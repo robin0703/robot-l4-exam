@@ -7,10 +7,12 @@ import Exam from '@/sections/Exam'
 import Knowledge from '@/sections/Knowledge'
 import Hot from '@/sections/Hot'
 import Practice from '@/sections/Practice'
+import WrongBook from '@/sections/WrongBook'
+import { getUser, logout } from '@/lib/store'
 import { cn } from '@/lib/utils'
-import { Bot, LayoutDashboard, Timer, Layers, Flame, Wrench, Loader2, ChevronLeft, Repeat } from 'lucide-react'
+import { Bot, LayoutDashboard, Timer, Layers, Flame, Wrench, Loader2, ChevronLeft, Repeat, BookX, LogOut } from 'lucide-react'
 
-type Tab = 'overview' | 'exam' | 'kp' | 'hot' | 'practice'
+type Tab = 'overview' | 'exam' | 'kp' | 'hot' | 'practice' | 'wrong'
 
 const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: '总览', icon: LayoutDashboard },
@@ -18,6 +20,7 @@ const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'kp', label: '知识点总结', icon: Layers },
   { id: 'hot', label: '高频考题', icon: Flame },
   { id: 'practice', label: '实操专区', icon: Wrench },
+  { id: 'wrong', label: '我的错题本', icon: BookX },
 ]
 
 const THEMES: Record<Level, { header: string; accent: string; text: string }> = {
@@ -31,6 +34,7 @@ export default function Home({ level }: { level: Level }) {
   const [err, setErr] = useState('')
   const theme = THEMES[level]
   const other: Level = level === 'l3' ? 'l4' : 'l3'
+  const user = getUser()
 
   useEffect(() => {
     setReady(false)
@@ -58,12 +62,27 @@ export default function Home({ level }: { level: Level }) {
               全国青少年机器人技术等级考试 · {stats.sessionCount} 届真题 · {stats.paperCount} 套试卷 · {stats.questionCount} 道题
             </p>
           </div>
-          <Link
-            to={'/' + other}
-            className="flex shrink-0 items-center gap-1 rounded-lg bg-white/15 px-3 py-1.5 text-xs transition hover:bg-white/25 sm:text-sm"
-          >
-            <Repeat className="h-3.5 w-3.5" /> 切换到{LEVELS[other].short}
-          </Link>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <div className="flex items-center gap-1.5 text-xs text-white/90">
+              <span>{user}</span>
+              <button
+                title="退出登录"
+                className="flex items-center gap-0.5 rounded bg-white/15 px-1.5 py-0.5 transition hover:bg-white/25"
+                onClick={() => {
+                  logout()
+                  window.location.reload()
+                }}
+              >
+                <LogOut className="h-3 w-3" /> 退出
+              </button>
+            </div>
+            <Link
+              to={'/' + other}
+              className="flex items-center gap-1 rounded-lg bg-white/15 px-3 py-1.5 text-xs transition hover:bg-white/25 sm:text-sm"
+            >
+              <Repeat className="h-3.5 w-3.5" /> 切换到{LEVELS[other].short}
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -103,6 +122,7 @@ export default function Home({ level }: { level: Level }) {
             {tab === 'kp' && <Knowledge level={level} />}
             {tab === 'hot' && <Hot level={level} />}
             {tab === 'practice' && <Practice level={level} />}
+            {tab === 'wrong' && <WrongBook />}
           </>
         )}
       </main>

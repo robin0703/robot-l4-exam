@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Level, Paper, Question } from '@/lib/exam'
 import { getPaperQuestions, getTheoryPapers, gradeAnswer, sessionLabel } from '@/lib/exam'
+import { getUser, saveAttempt } from '@/lib/store'
 import QuestionCard from '@/components/QuestionCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -35,6 +36,7 @@ export default function Exam({ level }: { level: Level }) {
   const [remaining, setRemaining] = useState(0)
   const [usedSec, setUsedSec] = useState(0)
   const topRef = useRef<HTMLDivElement>(null)
+  const savedRef = useRef(false)
 
   const theoryPapers = getTheoryPapers(level)
 
@@ -54,6 +56,7 @@ export default function Exam({ level }: { level: Level }) {
   }, [phase])
 
   const start = (p: Paper) => {
+    savedRef.current = false
     setPaper(p)
     setAnswers({})
     setLoadErr('')
@@ -73,10 +76,20 @@ export default function Exam({ level }: { level: Level }) {
   }
 
   const submit = () => {
-    setUsedSec((paper?.et || 30) * 60 - remaining)
     setPhase('result')
     window.scrollTo({ top: 0 })
   }
+
+  // 进入成绩页时保存做题记录（含错题）到本机，仅保存一次
+  useEffect(() => {
+    if (phase !== 'result' || !paper || savedRef.current) return
+    savedRef.current = true
+    const u = getUser()
+    const used = (paper.et || 30) * 60 - remaining
+    setUsedSec(used)
+    if (u) saveAttempt(u, level, paper, questions, answers, used)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
 
   if (phase === 'loading') {
     return (

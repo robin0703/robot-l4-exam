@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { Level, MetaData } from '@/lib/exam'
 import { initData, getMeta, sessionLabel } from '@/lib/exam'
+import { getUser, logout } from '@/lib/store'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Bot, ArrowRight, FileText, Layers, Timer, Wrench, Loader2 } from 'lucide-react'
+import { Bot, ArrowRight, FileText, Layers, Timer, Wrench, Loader2, LogOut, UserCircle2 } from 'lucide-react'
 
 const LEVEL_CARDS: {
   level: Level
@@ -44,6 +45,7 @@ export default function Landing() {
   const [ready, setReady] = useState(false)
   const [err, setErr] = useState('')
   const [metas, setMetas] = useState<Record<Level, MetaData> | null>(null)
+  const user = getUser()
 
   useEffect(() => {
     Promise.all([initData('l3'), initData('l4')])
@@ -56,7 +58,20 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
+      <header className="relative bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white">
+        <div className="absolute right-4 top-4 flex items-center gap-2 text-xs text-white/80">
+          <UserCircle2 className="h-4 w-4" />
+          <span>{user}</span>
+          <button
+            className="flex items-center gap-1 rounded bg-white/10 px-2 py-1 transition hover:bg-white/20"
+            onClick={() => {
+              logout()
+              window.location.reload()
+            }}
+          >
+            <LogOut className="h-3 w-3" /> 退出
+          </button>
+        </div>
         <div className="mx-auto flex max-w-4xl flex-col items-center gap-3 px-4 py-12 text-center sm:px-6">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
             <Bot className="h-8 w-8" />

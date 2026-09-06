@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { Routes, Route, Navigate, useParams } from 'react-router'
 import { isLevel } from './lib/exam'
+import { getUser } from './lib/store'
+import Login from './pages/Login'
 import Landing from './pages/Landing'
 import Home from './pages/Home'
 
@@ -10,6 +13,10 @@ function LevelGate() {
 }
 
 export default function App() {
+  const [user, setUserState] = useState<string | null>(() => getUser())
+
+  if (!user) return <Login onLogin={setUserState} />
+
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
