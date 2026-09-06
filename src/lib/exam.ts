@@ -1,5 +1,3 @@
-import raw from '@/data/examData.json'
-
 export type Kind = 'T' | 'P'
 
 export interface Paper {
@@ -28,10 +26,18 @@ export interface Question {
   kp: string[]
 }
 
+export interface KpRef {
+  p: string
+  q: string
+  se: string
+  no: number
+}
+
 export interface KpStat {
   name: string
   count: number
   sessions: number
+  refs: KpRef[]
 }
 
 export interface HotGroup {
@@ -39,11 +45,11 @@ export interface HotGroup {
   sessions: string[]
   paperId: string
   qid: string
+  text: string
 }
 
-export interface ExamData {
+export interface MetaData {
   papers: Paper[]
-  questions: Record<string, Question[]>
   kpStats: KpStat[]
   hot: HotGroup[]
   stats: {
@@ -55,7 +61,36 @@ export interface ExamData {
   }
 }
 
-export const DATA = raw as unknown as ExamData
+export const META: MetaData = {
+  papers: [],
+  kpStats: [],
+  hot: [],
+  stats: { paperCount: 0, theoryCount: 0, practiceCount: 0, questionCount: 0, kpCount: 0 },
+}
+
+const BASE = (import.meta.env.BASE_URL || '/') + 'data/'
+const paperCache = new Map<string, Question[]>()
+
+export async function initData(): Promise<void> {
+  if (META.papers.length) return
+  const r = await fetch(BASE + 'meta.json')
+  if (!r.ok) throw new Error('meta load failed: ' + r.status)
+  Object.assign(META, await r.json())
+}
+
+export async function getPaperQuestions(paperId: string): Promise<Question[]> {
+  const hit = paperCache.get(paperId)
+  if (hit) return hit
+  const r = await fetch(`${BASE}papers/${paperId}.json`)
+  if (!r.ok) throw new Error('paper load failed: ' + r.status)
+  const qs = (await r.json()) as Question[]
+  paperCache.set(paperId, qs)
+  return qs
+}
+
+export async function findQuestion(paperId: string, qid: string): Promise<Question | undefined> {
+  return (await getPaperQuestions(paperId)).find((q) => q.i === qid)
+}
 
 export const sessionLabel = (se: string) =>
   se.length === 6 ? `${se.slice(0, 4)}年${parseInt(se.slice(4), 10)}月` : se
@@ -72,24 +107,6 @@ export function stripHtml(s: string): string {
   return (d.textContent || '').replace(/\s+/g, ' ').trim()
 }
 
-export function findQuestion(paperId: string, qid: string): Question | undefined {
-  return (DATA.questions[paperId] || []).find((q) => q.i === qid)
-}
-
-export function questionsForKp(name: string, limit = 8) {
-  const out: { paper: Paper; q: Question }[] = []
-  const sorted = [...DATA.papers].sort((a, b) => (a.se < b.se ? 1 : -1))
-  for (const p of sorted) {
-    for (const q of DATA.questions[p.id] || []) {
-      if (q.kp.includes(name)) {
-        out.push({ paper: p, q })
-        if (out.length >= limit) return out
-      }
-    }
-  }
-  return out
-}
-
 const norm = (x: string) =>
   x
     .split(',')
@@ -104,5 +121,5 @@ export function gradeAnswer(q: Question, v: string | undefined): boolean {
   return v.trim() === q.a.trim()
 }
 
-export const theoryPapers = DATA.papers.filter((p) => p.k === 'T')
-export const practicePapers = DATA.papers.filter((p) => p.k === 'P')
+export const getTheoryPapers = () => META.papers.filter((p) => p.k === 'T')
+export const getPracticePapers = () => META.papers.filter((p) => p.k === 'P')

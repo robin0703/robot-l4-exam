@@ -1,4 +1,4 @@
-import { DATA, sessionLabel, stripHtml, findQuestion } from '@/lib/exam'
+import { META, sessionLabel } from '@/lib/exam'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function Overview({ onNavigate }: Props) {
-  const { stats, kpStats, hot } = DATA
+  const { stats, kpStats, hot } = META
   const maxKp = kpStats[0]?.count || 1
 
   const cards = [
@@ -81,21 +81,17 @@ export default function Overview({ onNavigate }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {hot.slice(0, 5).map((h) => {
-              const q = findQuestion(h.paperId, h.qid)
-              if (!q) return null
-              return (
-                <div key={h.qid + h.paperId} className="rounded-lg border p-3">
-                  <div className="mb-1.5 flex items-center gap-2">
-                    <Badge className="bg-orange-500 hover:bg-orange-500">×{h.count}</Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {h.sessions.map(sessionLabel).join(' · ')}
-                    </span>
-                  </div>
-                  <p className="line-clamp-2 text-sm text-slate-700">{stripHtml(q.s)}</p>
+            {hot.slice(0, 5).map((h) => (
+              <div key={h.qid + h.paperId} className="rounded-lg border p-3">
+                <div className="mb-1.5 flex items-center gap-2">
+                  <Badge className="bg-orange-500 hover:bg-orange-500">×{h.count}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {h.sessions.map(sessionLabel).join(' · ')}
+                  </span>
                 </div>
-              )
-            })}
+                <p className="line-clamp-2 text-sm text-slate-700">{h.text}</p>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>

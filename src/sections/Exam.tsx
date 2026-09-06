@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Paper } from '@/lib/exam'
-import { DATA, gradeAnswer, sessionLabel, theoryPapers } from '@/lib/exam'
+import { useEffect, useRef, useState } from 'react'
+import type { Paper, Question } from '@/lib/exam'
+import { getPaperQuestions, getTheoryPapers, gradeAnswer, sessionLabel } from '@/lib/exam'
 import QuestionCard from '@/components/QuestionCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,9 +16,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Clock, ChevronLeft, PlayCircle, Trophy } from 'lucide-react'
+import { Clock, ChevronLeft, PlayCircle, Trophy, Loader2 } from 'lucide-react'
 
-type Phase = 'pick' | 'run' | 'result'
+type Phase = 'pick' | 'loading' | 'run' | 'result'
 
 function fmt(sec: number) {
   const m = Math.floor(sec / 60)
@@ -29,12 +29,14 @@ function fmt(sec: number) {
 export default function Exam() {
   const [phase, setPhase] = useState<Phase>('pick')
   const [paper, setPaper] = useState<Paper | null>(null)
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [loadErr, setLoadErr] = useState('')
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [remaining, setRemaining] = useState(0)
   const [usedSec, setUsedSec] = useState(0)
   const topRef = useRef<HTMLDivElement>(null)
 
-  const questions = useMemo(() => (paper ? DATA.questions[paper.id] || [] : []), [paper])
+  const theoryPapers = getTheoryPapers()
 
   useEffect(() => {
     if (phase !== 'run') return
@@ -54,16 +56,35 @@ export default function Exam() {
   const start = (p: Paper) => {
     setPaper(p)
     setAnswers({})
-    setRemaining((p.et || 30) * 60)
-    setUsedSec(0)
-    setPhase('run')
+    setLoadErr('')
+    setPhase('loading')
     window.scrollTo({ top: 0 })
+    getPaperQuestions(p.id)
+      .then((qs) => {
+        setQuestions(qs)
+        setRemaining((p.et || 30) * 60)
+        setUsedSec(0)
+        setPhase('run')
+      })
+      .catch((e) => {
+        setLoadErr(String(e))
+        setPhase('pick')
+      })
   }
 
   const submit = () => {
     setUsedSec((paper?.et || 30) * 60 - remaining)
     setPhase('result')
     window.scrollTo({ top: 0 })
+  }
+
+  if (phase === 'loading') {
+    return (
+      <div className="flex flex-col items-center gap-3 py-24 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+        <p className="text-sm">正在加载试卷题目…</p>
+      </div>
+    )
   }
 
   if (phase === 'pick') {
@@ -74,6 +95,7 @@ export default function Exam() {
           <p className="mt-1 text-sm text-muted-foreground">
             共 {theoryPapers.length} 套 · 每套 30 题（单选 20 + 多选 5 + 判断 5）· 限时 30 分钟 · 满分 100 分
           </p>
+          {loadErr && <p className="mt-2 text-sm text-rose-600">试卷加载失败：{loadErr}，请重试</p>}
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {theoryPapers.map((p) => (
@@ -105,7 +127,7 @@ export default function Exam() {
               <div className="text-sm font-bold text-slate-800">{sessionLabel(paper.se)} 理论真题</div>
               <div className="text-xs text-muted-foreground">已答 {answered}/{questions.length}</div>
             </div>
-            <Badge className={`px-3 py-1.5 text-sm font-mono ${remaining < 300 ? 'bg-rose-500' : 'bg-slate-800'}`}>
+            <Badge className={`px-3 py-1.5 font-mono text-sm ${remaining < 300 ? 'bg-rose-500' : 'bg-slate-800'}`}>
               <Clock className="mr-1 h-4 w-4" /> {fmt(remaining)}
             </Badge>
           </div>

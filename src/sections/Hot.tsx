@@ -1,13 +1,26 @@
 import { useState } from 'react'
-import { DATA, findQuestion, sessionLabel } from '@/lib/exam'
+import type { Question } from '@/lib/exam'
+import { META, findQuestion, sessionLabel } from '@/lib/exam'
 import QuestionCard from '@/components/QuestionCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Flame } from 'lucide-react'
+import { Flame, Loader2 } from 'lucide-react'
 
 export default function Hot() {
   const [showId, setShowId] = useState<string | null>(null)
+  const [qMap, setQMap] = useState<Record<string, Question | undefined>>({})
+  const [loadingId, setLoadingId] = useState<string | null>(null)
+
+  const expand = (key: string, paperId: string, qid: string) => {
+    if (showId === key) return
+    setShowId(key)
+    if (qMap[key]) return
+    setLoadingId(key)
+    findQuestion(paperId, qid)
+      .then((q) => setQMap((m) => ({ ...m, [key]: q })))
+      .finally(() => setLoadingId((cur) => (cur === key ? null : cur)))
+  }
 
   return (
     <div>
@@ -16,16 +29,15 @@ export default function Hot() {
           <Flame className="h-5 w-5 text-orange-500" /> 高频考题榜
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          在多个考期反复出现的题目（按题干比对去重，共 {DATA.hot.length} 组）。这些题换个年份还会再考，务必吃透。
+          在多个考期反复出现的题目（按题干比对去重，共 {META.hot.length} 组）。这些题换个年份还会再考，务必吃透。
         </p>
       </div>
 
       <div className="space-y-3">
-        {DATA.hot.map((h, rank) => {
-          const q = findQuestion(h.paperId, h.qid)
-          if (!q) return null
+        {META.hot.map((h, rank) => {
           const key = `${h.paperId}-${h.qid}`
           const expanded = showId === key
+          const q = qMap[key]
           return (
             <Card key={key} className={rank < 3 ? 'border-orange-300' : ''}>
               <CardContent className="p-4">
@@ -47,17 +59,22 @@ export default function Hot() {
                       ))}
                     </div>
                     {expanded ? (
-                      <QuestionCard q={q} index={q.no - 1} mode="review" />
+                      loadingId === key ? (
+                        <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin text-amber-500" /> 正在加载题目…
+                        </div>
+                      ) : q ? (
+                        <QuestionCard q={q} index={q.no - 1} mode="review" />
+                      ) : (
+                        <p className="text-sm text-rose-600">题目加载失败，请重试</p>
+                      )
                     ) : (
                       <button
                         type="button"
                         className="block w-full text-left"
-                        onClick={() => setShowId(key)}
+                        onClick={() => expand(key, h.paperId, h.qid)}
                       >
-                        <p className="line-clamp-2 text-sm text-slate-700">
-                          {/* 摘要纯文本 */}
-                          {q.s.replace(/<[^>]+>/g, '').slice(0, 120)}
-                        </p>
+                        <p className="line-clamp-2 text-sm text-slate-700">{h.text}</p>
                         <span className="mt-1 inline-block text-xs text-amber-600">点击查看题目与答案解析 →</span>
                       </button>
                     )}

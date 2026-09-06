@@ -1,21 +1,22 @@
 import { useMemo, useState } from 'react'
-import { DATA, questionsForKp, sessionLabel } from '@/lib/exam'
+import type { KpRef, Question } from '@/lib/exam'
+import { META, getPaperQuestions, sessionLabel } from '@/lib/exam'
 import QuestionCard from '@/components/QuestionCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { ChevronDown, ChevronUp, Search } from 'lucide-react'
+import { ChevronDown, ChevronUp, Loader2, Search } from 'lucide-react'
 
 export default function Knowledge() {
   const [kw, setKw] = useState('')
   const [open, setOpen] = useState<string | null>(null)
 
   const list = useMemo(
-    () => DATA.kpStats.filter((k) => !kw || k.name.toLowerCase().includes(kw.toLowerCase())),
+    () => META.kpStats.filter((k) => !kw || k.name.toLowerCase().includes(kw.toLowerCase())),
     [kw]
   )
-  const max = DATA.kpStats[0]?.count || 1
+  const max = META.kpStats[0]?.count || 1
 
   return (
     <div>
@@ -23,7 +24,7 @@ export default function Knowledge() {
         <div>
           <h2 className="text-lg font-bold text-slate-800">知识点总结 · 按考查频次排序</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            基于 {DATA.stats.theoryCount} 套理论真题的官方考点标注，频次越高越要重点复习。点击考点可查看相关真题。
+            基于 {META.stats.theoryCount} 套理论真题的官方考点标注，频次越高越要重点复习。点击考点可查看相关真题。
           </p>
         </div>
         <div className="relative w-full sm:w-64">
@@ -64,7 +65,7 @@ export default function Knowledge() {
                   {expanded ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
                 </button>
 
-                {expanded && <KpDetail name={k.name} />}
+                {expanded && <KpDetail refs={k.refs} />}
               </CardContent>
             </Card>
           )
@@ -74,31 +75,65 @@ export default function Knowledge() {
   )
 }
 
-function KpDetail({ name }: { name: string }) {
+interface RefItem {
+  ref: KpRef
+  q?: Question
+}
+
+function KpDetail({ refs }: { refs: KpRef[] }) {
   const [show, setShow] = useState(false)
-  const items = useMemo(() => questionsForKp(name, 6), [name])
+  const [loading, setLoading] = useState(false)
+  const [items, setItems] = useState<RefItem[]>(refs.map((ref) => ({ ref })))
+
+  const load = async () => {
+    if (show) {
+      setShow(false)
+      return
+    }
+    setShow(true)
+    if (items.every((it) => it.q)) return
+    setLoading(true)
+    try {
+      const paperIds = [...new Set(refs.map((r) => r.p))]
+      const packs = await Promise.all(paperIds.map((id) => getPaperQuestions(id)))
+      const byPaper = new Map(paperIds.map((id, idx) => [id, packs[idx]]))
+      setItems(refs.map((ref) => ({ ref, q: byPaper.get(ref.p)?.find((q) => q.i === ref.q) })))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="mt-4 border-t pt-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs text-muted-foreground">相关真题（最多展示 6 道）</span>
-        <Button size="sm" variant="outline" onClick={() => setShow(!show)}>
+        <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+          {loading && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
           {show ? '收起题目' : '展开题目（含答案解析）'}
         </Button>
       </div>
       {show ? (
-        <div className="space-y-3">
-          {items.map(({ paper, q }) => (
-            <div key={q.i}>
-              <div className="mb-1 text-xs text-muted-foreground">{sessionLabel(paper.se)}考期 · 第 {q.no} 题</div>
-              <QuestionCard q={q} index={q.no - 1} mode="review" />
-            </div>
-          ))}
-        </div>
+        loading ? (
+          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin text-amber-500" /> 正在加载题目…
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {items.map(({ ref, q }) => (
+              <div key={ref.q}>
+                <div className="mb-1 text-xs text-muted-foreground">
+                  {sessionLabel(ref.se)}考期 · 第 {ref.no} 题
+                </div>
+                {q && <QuestionCard q={q} index={q.no - 1} mode="review" />}
+              </div>
+            ))}
+          </div>
+        )
       ) : (
         <ul className="list-disc space-y-1 pl-5 text-sm text-slate-600">
-          {items.map(({ paper, q }) => (
-            <li key={q.i} className="truncate">
-              <span className="text-muted-foreground">[{sessionLabel(paper.se)}]</span> 第 {q.no} 题
+          {refs.map((r) => (
+            <li key={r.q} className="truncate">
+              <span className="text-muted-foreground">[{sessionLabel(r.se)}]</span> 第 {r.no} 题
             </li>
           ))}
         </ul>
