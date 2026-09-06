@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Paper, Question } from '@/lib/exam'
+import type { Level, Paper, Question } from '@/lib/exam'
 import { getPaperQuestions, getTheoryPapers, gradeAnswer, sessionLabel } from '@/lib/exam'
 import QuestionCard from '@/components/QuestionCard'
 import { Card, CardContent } from '@/components/ui/card'
@@ -26,7 +26,7 @@ function fmt(sec: number) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-export default function Exam() {
+export default function Exam({ level }: { level: Level }) {
   const [phase, setPhase] = useState<Phase>('pick')
   const [paper, setPaper] = useState<Paper | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
@@ -36,7 +36,7 @@ export default function Exam() {
   const [usedSec, setUsedSec] = useState(0)
   const topRef = useRef<HTMLDivElement>(null)
 
-  const theoryPapers = getTheoryPapers()
+  const theoryPapers = getTheoryPapers(level)
 
   useEffect(() => {
     if (phase !== 'run') return
@@ -59,7 +59,7 @@ export default function Exam() {
     setLoadErr('')
     setPhase('loading')
     window.scrollTo({ top: 0 })
-    getPaperQuestions(p.id)
+    getPaperQuestions(level, p.id)
       .then((qs) => {
         setQuestions(qs)
         setRemaining((p.et || 30) * 60)

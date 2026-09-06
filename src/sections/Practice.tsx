@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Question } from '@/lib/exam'
+import type { Level, Question } from '@/lib/exam'
 import { getPaperQuestions, getPracticePapers, sessionLabel } from '@/lib/exam'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,12 +9,12 @@ function Html({ html, className }: { html: string; className?: string }) {
   return <div className={`qhtml ${className ?? ''}`} dangerouslySetInnerHTML={{ __html: html }} />
 }
 
-export default function Practice() {
+export default function Practice({ level }: { level: Level }) {
   const [open, setOpen] = useState<string | null>(null)
   const [qsMap, setQsMap] = useState<Record<string, Question[]>>({})
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
-  const practicePapers = getPracticePapers()
+  const practicePapers = getPracticePapers(level)
 
   const toggle = (pid: string) => {
     if (open === pid) {
@@ -24,7 +24,7 @@ export default function Practice() {
     setOpen(pid)
     if (qsMap[pid]) return
     setLoadingId(pid)
-    getPaperQuestions(pid)
+    getPaperQuestions(level, pid)
       .then((qs) => setQsMap((m) => ({ ...m, [pid]: qs })))
       .finally(() => setLoadingId((cur) => (cur === pid ? null : cur)))
   }

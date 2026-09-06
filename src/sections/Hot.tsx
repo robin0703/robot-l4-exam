@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import type { Question } from '@/lib/exam'
-import { META, findQuestion, sessionLabel } from '@/lib/exam'
+import type { Level, Question } from '@/lib/exam'
+import { getMeta, findQuestion, sessionLabel } from '@/lib/exam'
 import QuestionCard from '@/components/QuestionCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Flame, Loader2 } from 'lucide-react'
 
-export default function Hot() {
+export default function Hot({ level }: { level: Level }) {
+  const META = getMeta(level)
   const [showId, setShowId] = useState<string | null>(null)
   const [qMap, setQMap] = useState<Record<string, Question | undefined>>({})
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -17,7 +18,7 @@ export default function Hot() {
     setShowId(key)
     if (qMap[key]) return
     setLoadingId(key)
-    findQuestion(paperId, qid)
+    findQuestion(level, paperId, qid)
       .then((q) => setQMap((m) => ({ ...m, [key]: q })))
       .finally(() => setLoadingId((cur) => (cur === key ? null : cur)))
   }

@@ -1,4 +1,12 @@
 export type Kind = 'T' | 'P'
+export type Level = 'l3' | 'l4'
+
+export const LEVELS: Record<Level, { name: string; short: string }> = {
+  l3: { name: '机器人三级', short: '三级' },
+  l4: { name: '机器人四级', short: '四级' },
+}
+
+export const isLevel = (v: string | undefined): v is Level => v === 'l3' || v === 'l4'
 
 export interface Paper {
   id: string
@@ -58,38 +66,55 @@ export interface MetaData {
     practiceCount: number
     questionCount: number
     kpCount: number
+    sessionCount: number
+    firstSession: string
+    lastSession: string
   }
 }
 
-export const META: MetaData = {
+const emptyMeta = (): MetaData => ({
   papers: [],
   kpStats: [],
   hot: [],
-  stats: { paperCount: 0, theoryCount: 0, practiceCount: 0, questionCount: 0, kpCount: 0 },
-}
+  stats: {
+    paperCount: 0,
+    theoryCount: 0,
+    practiceCount: 0,
+    questionCount: 0,
+    kpCount: 0,
+    sessionCount: 0,
+    firstSession: '',
+    lastSession: '',
+  },
+})
+
+const METAS: Record<Level, MetaData> = { l3: emptyMeta(), l4: emptyMeta() }
 
 const BASE = (import.meta.env.BASE_URL || '/') + 'data/'
-const paperCache = new Map<string, Question[]>()
+const paperCaches: Record<Level, Map<string, Question[]>> = { l3: new Map(), l4: new Map() }
 
-export async function initData(): Promise<void> {
-  if (META.papers.length) return
-  const r = await fetch(BASE + 'meta.json')
+export async function initData(level: Level): Promise<void> {
+  if (METAS[level].papers.length) return
+  const r = await fetch(`${BASE}${level}/meta.json`)
   if (!r.ok) throw new Error('meta load failed: ' + r.status)
-  Object.assign(META, await r.json())
+  Object.assign(METAS[level], await r.json())
 }
 
-export async function getPaperQuestions(paperId: string): Promise<Question[]> {
-  const hit = paperCache.get(paperId)
+export const getMeta = (level: Level) => METAS[level]
+
+export async function getPaperQuestions(level: Level, paperId: string): Promise<Question[]> {
+  const cache = paperCaches[level]
+  const hit = cache.get(paperId)
   if (hit) return hit
-  const r = await fetch(`${BASE}papers/${paperId}.json`)
+  const r = await fetch(`${BASE}${level}/papers/${paperId}.json`)
   if (!r.ok) throw new Error('paper load failed: ' + r.status)
   const qs = (await r.json()) as Question[]
-  paperCache.set(paperId, qs)
+  cache.set(paperId, qs)
   return qs
 }
 
-export async function findQuestion(paperId: string, qid: string): Promise<Question | undefined> {
-  return (await getPaperQuestions(paperId)).find((q) => q.i === qid)
+export async function findQuestion(level: Level, paperId: string, qid: string): Promise<Question | undefined> {
+  return (await getPaperQuestions(level, paperId)).find((q) => q.i === qid)
 }
 
 export const sessionLabel = (se: string) =>
@@ -121,5 +146,5 @@ export function gradeAnswer(q: Question, v: string | undefined): boolean {
   return v.trim() === q.a.trim()
 }
 
-export const getTheoryPapers = () => META.papers.filter((p) => p.k === 'T')
-export const getPracticePapers = () => META.papers.filter((p) => p.k === 'P')
+export const getTheoryPapers = (level: Level) => METAS[level].papers.filter((p) => p.k === 'T')
+export const getPracticePapers = (level: Level) => METAS[level].papers.filter((p) => p.k === 'P')

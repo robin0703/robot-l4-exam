@@ -1,22 +1,29 @@
-import { META, sessionLabel } from '@/lib/exam'
+import type { Level } from '@/lib/exam'
+import { getMeta, sessionLabel } from '@/lib/exam'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BookOpenCheck, FileText, Layers, Flame, CalendarDays, ArrowRight } from 'lucide-react'
 
 interface Props {
+  level: Level
   onNavigate: (tab: 'exam' | 'kp' | 'hot' | 'practice') => void
 }
 
-export default function Overview({ onNavigate }: Props) {
-  const { stats, kpStats, hot } = META
+export default function Overview({ level, onNavigate }: Props) {
+  const { stats, kpStats, hot } = getMeta(level)
   const maxKp = kpStats[0]?.count || 1
 
   const cards = [
     { icon: FileText, label: '历年真题试卷', value: stats.paperCount, sub: `理论 ${stats.theoryCount} 套 · 实操 ${stats.practiceCount} 套` },
     { icon: BookOpenCheck, label: '题目总数', value: stats.questionCount, sub: '单选 / 多选 / 判断 / 实操' },
     { icon: Layers, label: '考点覆盖', value: stats.kpCount, sub: '官方标注知识点' },
-    { icon: CalendarDays, label: '覆盖考期', value: 22, sub: '2021年3月 — 2026年6月' },
+    {
+      icon: CalendarDays,
+      label: '覆盖考期',
+      value: stats.sessionCount,
+      sub: `${sessionLabel(stats.firstSession)} — ${sessionLabel(stats.lastSession)}`,
+    },
   ]
 
   return (

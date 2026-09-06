@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import type { KpRef, Question } from '@/lib/exam'
-import { META, getPaperQuestions, sessionLabel } from '@/lib/exam'
+import type { KpRef, Level, Question } from '@/lib/exam'
+import { getMeta, getPaperQuestions, sessionLabel } from '@/lib/exam'
 import QuestionCard from '@/components/QuestionCard'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, ChevronUp, Loader2, Search } from 'lucide-react'
 
-export default function Knowledge() {
+export default function Knowledge({ level }: { level: Level }) {
+  const META = getMeta(level)
   const [kw, setKw] = useState('')
   const [open, setOpen] = useState<string | null>(null)
 
@@ -65,7 +66,7 @@ export default function Knowledge() {
                   {expanded ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
                 </button>
 
-                {expanded && <KpDetail refs={k.refs} />}
+                {expanded && <KpDetail level={level} refs={k.refs} />}
               </CardContent>
             </Card>
           )
@@ -80,7 +81,7 @@ interface RefItem {
   q?: Question
 }
 
-function KpDetail({ refs }: { refs: KpRef[] }) {
+function KpDetail({ level, refs }: { level: Level; refs: KpRef[] }) {
   const [show, setShow] = useState(false)
   const [loading, setLoading] = useState(false)
   const [items, setItems] = useState<RefItem[]>(refs.map((ref) => ({ ref })))
@@ -95,7 +96,7 @@ function KpDetail({ refs }: { refs: KpRef[] }) {
     setLoading(true)
     try {
       const paperIds = [...new Set(refs.map((r) => r.p))]
-      const packs = await Promise.all(paperIds.map((id) => getPaperQuestions(id)))
+      const packs = await Promise.all(paperIds.map((id) => getPaperQuestions(level, id)))
       const byPaper = new Map(paperIds.map((id, idx) => [id, packs[idx]]))
       setItems(refs.map((ref) => ({ ref, q: byPaper.get(ref.p)?.find((q) => q.i === ref.q) })))
     } finally {
