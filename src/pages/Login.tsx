@@ -43,17 +43,12 @@ export default function Login({ onLogin }: { onLogin: (name: string) => void }) 
                 <User className="h-4 w-4" /> 你的名字
               </label>
               <Input
-                list="student-names"
-                placeholder="输入报名时登记的名字"
+                placeholder="输入你的名字"
+                autoComplete="off"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && submit()}
               />
-              <datalist id="student-names">
-                {STUDENTS.map((s) => (
-                  <option key={s} value={s} />
-                ))}
-              </datalist>
             </div>
 
             <div>
