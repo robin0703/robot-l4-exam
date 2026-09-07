@@ -123,8 +123,11 @@ export const sessionLabel = (se: string) =>
 export const typeLabel = (t: number) =>
   ({ 1: '单选题', 2: '多选题', 3: '判断题', 4: '实操题' } as Record<number, string>)[t] ?? '题目'
 
-export const answerText = (q: Question) =>
-  q.t === 3 ? (q.a === '1' ? '正确' : '错误') : q.a
+export const answerText = (q: Question) => {
+  if (q.t === 3) return q.a === '1' ? '正确' : '错误'
+  const ls = (q.a.match(/[A-Za-z]/g) || []).map((s) => s.toUpperCase())
+  return ls.length ? ls.join('、') : q.a
+}
 
 export function stripHtml(s: string): string {
   const d = document.createElement('div')
@@ -132,18 +135,17 @@ export function stripHtml(s: string): string {
   return (d.textContent || '').replace(/\s+/g, ' ').trim()
 }
 
-const norm = (x: string) =>
-  x
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
+// 提取答案字母（源数据多选答案为 "BCD"，学生作答为 "B,C,D"，统一为排序后的字母序列比较）
+const letters = (x: string) =>
+  (x.match(/[A-Za-z]/g) || [])
+    .map((s) => s.toUpperCase())
     .sort()
-    .join(',')
+    .join('')
 
 export function gradeAnswer(q: Question, v: string | undefined): boolean {
   if (!v) return false
-  if (q.t === 2) return norm(v) === norm(q.a)
-  return v.trim() === q.a.trim()
+  if (q.t === 3) return v.trim() === q.a.trim() // 判断题答案为 1/0，直接比较
+  return letters(v) === letters(q.a) // 单选/多选按字母集合比较
 }
 
 export const getTheoryPapers = (level: Level) => METAS[level].papers.filter((p) => p.k === 'T')

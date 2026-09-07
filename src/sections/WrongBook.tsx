@@ -207,14 +207,14 @@ export default function WrongBook() {
                     <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                       <Badge variant="secondary">{LEVELS[w.level].short}</Badge>
                       <Badge variant="outline">{sessionLabel(w.se)} · 第 {w.no} 题</Badge>
-                      <span>我的答案：<span className="text-rose-600">{w.my}</span></span>
+                      <span>我的答案：<span className="text-rose-600">{w.my || '（未作答）'}</span></span>
                       <span className="ml-auto text-amber-600">{expanded ? '收起 ▲' : '查看题目与解析 ▼'}</span>
                     </div>
                   </button>
                   {expanded && (
                     <div className="mt-3 border-t pt-3">
                       {q ? (
-                        <QuestionCard q={q} index={q.no - 1} mode="review" />
+                        <QuestionCard q={q} index={q.no - 1} mode="review" value={w.my || undefined} />
                       ) : (
                         <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
                           <Loader2 className="h-4 w-4 animate-spin text-amber-500" /> 正在加载题目…

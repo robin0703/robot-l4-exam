@@ -109,9 +109,12 @@ export function saveAttempt(
         qid: q.i,
         se: paper.se,
         no: q.no,
-        my: answers[q.i] || '（未作答）',
+        my: answers[q.i] || '',
         date: Date.now(),
       }
+    } else {
+      // 本次做对了，移出错题本（避免旧的误判/旧作答残留）
+      delete wrongsMap[q.i]
     }
   }
   localStorage.setItem(wrongsKey(name), JSON.stringify(wrongsMap))

@@ -42,10 +42,9 @@ export default function QuestionCard({ q, index, mode, value, onChange }: Props)
         ]
       : q.o
 
+  // 源数据多选答案为 "BCD"（无逗号），统一按字母提取
   const correctSet = new Set(
-    q.t === 2
-      ? q.a.split(',').map((s) => s.trim()).filter(Boolean)
-      : [q.a.trim()]
+    q.t === 3 ? [q.a.trim()] : (q.a.match(/[A-Za-z]/g) || []).map((s) => s.toUpperCase())
   )
 
   const hasAnalysis = stripHtml(q.an).length > 0
