@@ -1,12 +1,15 @@
 export type Kind = 'T' | 'P'
-export type Level = 'l3' | 'l4'
+export type Level = 'l1' | 'l2' | 'l3' | 'l4'
 
 export const LEVELS: Record<Level, { name: string; short: string }> = {
+  l1: { name: '机器人一级', short: '一级' },
+  l2: { name: '机器人二级', short: '二级' },
   l3: { name: '机器人三级', short: '三级' },
   l4: { name: '机器人四级', short: '四级' },
 }
 
-export const isLevel = (v: string | undefined): v is Level => v === 'l3' || v === 'l4'
+export const isLevel = (v: string | undefined): v is Level =>
+  v === 'l1' || v === 'l2' || v === 'l3' || v === 'l4'
 
 export interface Paper {
   id: string
@@ -88,10 +91,15 @@ const emptyMeta = (): MetaData => ({
   },
 })
 
-const METAS: Record<Level, MetaData> = { l3: emptyMeta(), l4: emptyMeta() }
+const METAS: Record<Level, MetaData> = { l1: emptyMeta(), l2: emptyMeta(), l3: emptyMeta(), l4: emptyMeta() }
 
 const BASE = (import.meta.env.BASE_URL || '/') + 'data/'
-const paperCaches: Record<Level, Map<string, Question[]>> = { l3: new Map(), l4: new Map() }
+const paperCaches: Record<Level, Map<string, Question[]>> = {
+  l1: new Map(),
+  l2: new Map(),
+  l3: new Map(),
+  l4: new Map(),
+}
 
 export async function initData(level: Level): Promise<void> {
   if (METAS[level].papers.length) return

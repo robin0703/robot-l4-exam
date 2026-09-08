@@ -24,6 +24,8 @@ const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
 ]
 
 const THEMES: Record<Level, { header: string; accent: string; text: string }> = {
+  l1: { header: 'from-emerald-500 via-green-500 to-green-600', accent: 'border-emerald-500 text-emerald-600', text: 'text-emerald-500' },
+  l2: { header: 'from-violet-500 via-purple-500 to-purple-600', accent: 'border-violet-500 text-violet-600', text: 'text-violet-500' },
   l3: { header: 'from-sky-500 via-blue-500 to-blue-600', accent: 'border-sky-500 text-sky-600', text: 'text-sky-500' },
   l4: { header: 'from-amber-500 via-orange-500 to-orange-600', accent: 'border-amber-500 text-amber-600', text: 'text-amber-500' },
 }
@@ -33,7 +35,6 @@ export default function Home({ level }: { level: Level }) {
   const [ready, setReady] = useState(false)
   const [err, setErr] = useState('')
   const theme = THEMES[level]
-  const other: Level = level === 'l3' ? 'l4' : 'l3'
   const user = getUser()
 
   useEffect(() => {
@@ -77,10 +78,10 @@ export default function Home({ level }: { level: Level }) {
               </button>
             </div>
             <Link
-              to={'/' + other}
+              to="/"
               className="flex items-center gap-1 rounded-lg bg-white/15 px-3 py-1.5 text-xs transition hover:bg-white/25 sm:text-sm"
             >
-              <Repeat className="h-3.5 w-3.5" /> 切换到{LEVELS[other].short}
+              <Repeat className="h-3.5 w-3.5" /> 切换等级
             </Link>
           </div>
         </div>

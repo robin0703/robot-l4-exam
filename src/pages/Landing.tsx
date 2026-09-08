@@ -16,6 +16,22 @@ const LEVEL_CARDS: {
   badge: string
 }[] = [
   {
+    level: 'l1',
+    title: '机器人一级',
+    desc: '理论：单选 / 多选 / 判断 · 实操：搭建 + 编程',
+    gradient: 'from-emerald-500 to-green-600',
+    ring: 'hover:border-emerald-400',
+    badge: 'bg-emerald-500',
+  },
+  {
+    level: 'l2',
+    title: '机器人二级',
+    desc: '理论：单选 / 多选 / 判断 · 实操：搭建 + 编程',
+    gradient: 'from-violet-500 to-purple-600',
+    ring: 'hover:border-violet-400',
+    badge: 'bg-violet-500',
+  },
+  {
     level: 'l3',
     title: '机器人三级',
     desc: '理论：单选 / 多选 / 判断 · 实操：搭建 + 编程',
@@ -48,9 +64,9 @@ export default function Landing() {
   const user = getUser()
 
   useEffect(() => {
-    Promise.all([initData('l3'), initData('l4')])
+    Promise.all([initData('l1'), initData('l2'), initData('l3'), initData('l4')])
       .then(() => {
-        setMetas({ l3: getMeta('l3'), l4: getMeta('l4') })
+        setMetas({ l1: getMeta('l1'), l2: getMeta('l2'), l3: getMeta('l3'), l4: getMeta('l4') })
         setReady(true)
       })
       .catch((e) => setErr(String(e)))
